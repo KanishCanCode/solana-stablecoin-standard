@@ -1,0 +1,95 @@
+version: "3.9"
+
+# SSS Issuer Platform — Docker Compose
+# Distinct from PR #40: uses Postgres 16 + Redis 7 + pgAdmin
+# Run: docker compose up -d
+
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     sss
+      POSTGRES_PASSWORD: sss
+      POSTGRES_DB:       sss
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sss"]
+      interval: 10s
+      timeout:  5s
+      retries:  5
+
+  # ── Redis ───────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout:  3s
+      retries:  5
+
+  # ── SSS Backend API ─────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+    environment:
+      NODE_ENV:       production
+      DATABASE_URL:   postgresql://sss:sss@postgres:5432/sss
+      REDIS_URL:      redis://redis:6379
+      SOLANA_RPC_URL: ${SOLANA_RPC_URL:-https://api.devnet.solana.com}
+      JWT_SECRET:     ${JWT_SECRET:-change-me-in-production-minimum-32chars}
+      PORT:           3001
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/healthz || exit 1"]
+      interval: 20s
+      timeout:  5s
+      retries:  5
+
+  # ── Next.js Frontend ────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      backend: { condition: service_healthy }
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:3001
+      NEXT_PUBLIC_RPC_URL: ${SOLANA_RPC_URL:-https://api.devnet.solana.com}
+    ports:
+      - "3000:3000"
+
+  # ── pgAdmin (dev only) ──────────────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    profiles: ["dev"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      PGADMIN_DEFAULT_EMAIL:    admin@sss.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+
+volumes:
+  postgres_data:
+  redis_data:

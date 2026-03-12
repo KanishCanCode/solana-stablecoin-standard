@@ -1,0 +1,22 @@
+[workspace]
+members = [
+    "programs/sss-core",
+    "programs/sss-hook",
+    "modules/sss-events",
+]
+resolver = "2"
+
+[workspace.dependencies]
+anchor-lang    = { version = "0.32.1", features = ["init-if-needed"] }
+anchor-spl     = { version = "0.32.1", features = ["token_2022", "token_2022_extensions", "metadata"] }
+spl-token-2022 = { version = "4.0.0", features = ["no-entrypoint"] }
+spl-transfer-hook-interface = { version = "0.7.0" }
+spl-tlv-account-resolution  = { version = "0.7.0" }
+sss-events     = { path = "modules/sss-events" }
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+
+[profile.dev]
+overflow-checks = true

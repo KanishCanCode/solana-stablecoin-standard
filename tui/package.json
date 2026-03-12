@@ -1,0 +1,28 @@
+{
+  "name": "@sss/tui",
+  "version": "0.1.0",
+  "description": "SSS Admin Dashboard — ink (React-for-terminal)",
+  "bin": { "sss-tui": "./dist/app.js" },
+  "type": "module",
+  "scripts": {
+    "dev":   "tsx src/app.tsx",
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor":   "^0.32.1",
+    "@solana/web3.js":     "^1.98.0",
+    "ink":                 "^5.0.1",
+    "ink-table":           "^3.0.0",
+    "ink-spinner":         "^5.0.0",
+    "ink-select-input":    "^5.0.0",
+    "react":               "^18.3.1",
+    "chalk":               "^5.3.0",
+    "dotenv":              "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node":  "^20.12.7",
+    "@types/react": "^18.3.3",
+    "tsx":          "^4.10.0",
+    "typescript":   "^5.4.5"
+  }
+}

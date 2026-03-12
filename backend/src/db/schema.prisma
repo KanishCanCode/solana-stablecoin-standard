@@ -1,0 +1,187 @@
+// SSS Indexer — Prisma schema
+// Naming matches on-chain: tier (not preset), totalIssued (not totalMinted),
+// halted (not paused), voteCount (not approvals), SssDenylist (not SssBlacklist)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Stablecoin registry ───────────────────────────────────────────────────────
+
+model SssToken {
+  id          String   @id @default(cuid())
+  mint        String   @unique   // base58 pubkey
+  authority   String
+  tier        Int                // 0=Minimal 1=Compliant 2=Institutional  (was `preset`)
+  name        String
+  symbol      String
+  decimals    Int
+  totalIssued BigInt   @default(0)   // was totalMinted
+  totalBurned BigInt   @default(0)
+  totalSeized BigInt   @default(0)
+  halted      Boolean  @default(false)   // was paused
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  minters     SssMinter[]
+  events      SssEvent[]
+  webhooks    SssWebhook[]
+  proposals   SssProposal[]
+  denylist    SssDenylist[]   // was SssBlacklist
+
+  @@map("sss_tokens")
+}
+
+// ── Minter registry ───────────────────────────────────────────────────────────
+
+model SssMinter {
+  id           String   @id @default(cuid())
+  mint         String
+  wallet       String   // minter wallet pubkey  (was `minter`)
+  cap          BigInt   // lifetime cap
+  issued       BigInt   @default(0)   // was `minted` — burns don't restore
+  enabled      Boolean  @default(true)   // was `active`
+  registeredAt DateTime @default(now())   // was `configuredAt`
+  updatedAt    DateTime @updatedAt
+
+  token        SssToken @relation(fields: [mint], references: [mint], onDelete: Cascade)
+
+  @@unique([mint, wallet])
+  @@map("sss_minters")
+}
+
+// ── Indexed events ────────────────────────────────────────────────────────────
+
+model SssEvent {
+  id        String   @id @default(cuid())
+  mint      String
+  kind      String   // matches SssEventKind: "deployed"|"issued"|"retired"|"confiscated"|...
+  seq       BigInt
+  slot      BigInt
+  signature String   @unique
+  payload   Json
+  indexedAt DateTime @default(now())
+
+  token     SssToken @relation(fields: [mint], references: [mint], onDelete: Cascade)
+
+  @@index([mint, kind])
+  @@index([seq])
+  @@map("sss_events")
+}
+
+// ── Denylist (was Blacklist) ───────────────────────────────────────────────────
+
+model SssDenylist {
+  id        String   @id @default(cuid())
+  mint      String
+  address   String
+  deniedBy  String   // was blacklistedBy
+  addedAt   DateTime @default(now())
+  removedAt DateTime?
+
+  token     SssToken @relation(fields: [mint], references: [mint], onDelete: Cascade)
+
+  @@unique([mint, address])
+  @@index([mint])
+  @@map("sss_denylist")
+}
+
+// ── Tier-3 Proposals ──────────────────────────────────────────────────────────
+
+model SssProposal {
+  id          String   @id @default(cuid())
+  mint        String
+  proposalSeq BigInt   // was proposalId — matches on-chain `seq`
+  proposer    String
+  recipient   String   // destination ATA (was `destination`)
+  amount      BigInt
+  voteCount   Int      @default(0)   // was approvals
+  threshold   Int
+  executed    Boolean  @default(false)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  token       SssToken    @relation(fields: [mint], references: [mint], onDelete: Cascade)
+  votes       SssVote[]   // was approvalLog / SssApproval
+
+  @@unique([mint, proposalSeq])
+  @@map("sss_proposals")
+}
+
+model SssVote {
+  id         String   @id @default(cuid())
+  proposalId String
+  voter      String   // was `signer`
+  slot       BigInt
+  signature  String   @unique
+  votedAt    DateTime @default(now())   // was approvedAt
+
+  proposal   SssProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@map("sss_votes")
+}
+
+// ── Webhooks ──────────────────────────────────────────────────────────────────
+
+model SssWebhook {
+  id          String   @id @default(cuid())
+  mint        String
+  url         String
+  secret      String
+  eventFilter String[] // event kind strings to forward
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  token       SssToken @relation(fields: [mint], references: [mint], onDelete: Cascade)
+  deliveries  SssWebhookDelivery[]
+
+  @@map("sss_webhooks")
+}
+
+model SssWebhookDelivery {
+  id         String   @id @default(cuid())
+  webhookId  String
+  eventId    String
+  statusCode Int?
+  attempt    Int      @default(1)
+  success    Boolean  @default(false)
+  error      String?
+  sentAt     DateTime @default(now())
+
+  webhook    SssWebhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@map("sss_webhook_deliveries")
+}
+
+// ── API Keys (for backend authentication) ─────────────────────────────────────
+
+model SssApiKey {
+  id         String    @id @default(cuid())
+  name       String
+  keyHash    String    @unique   // SHA-256 of the raw key — never store plaintext
+  scope      String[]  @default(["read"])  // ["read"] | ["read","write"] | ["admin"]
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+
+  @@map("sss_api_keys")
+}
+
+// ── Indexer checkpoint — survives restarts ────────────────────────────────────
+
+model SssIndexerCheckpoint {
+  id            String   @id @default("singleton")
+  lastSignature String?  // last confirmed tx signature processed
+  lastSlot      BigInt   @default(0)
+  updatedAt     DateTime @updatedAt
+
+  @@map("sss_indexer_checkpoint")
+}

@@ -1,0 +1,124 @@
+# =============================================================================
+# SSS — Combined Monorepo .gitignore
+# Covers: Rust/Anchor programs, Node.js workspaces, Next.js, Fastify/Prisma,
+#         TypeScript SDK/CLI/TUI, Solana toolchain, Docker, OS/editor
+# =============================================================================
+
+
+# ---------------------------------------------------------------------------
+# Environment & Secrets  ← NEVER commit these
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+
+# Solana keypairs / wallet files
+*.json.secret
+id.json
+deploy-keypair.json
+wallet.json
+
+
+# ---------------------------------------------------------------------------
+# Rust / Cargo
+# ---------------------------------------------------------------------------
+target/
+**/*.rs.bk
+# Cargo.lock  ← uncomment to ignore; keep tracked for deterministic builds
+
+# Anchor artefacts
+.anchor/
+deploy/
+# Uncomment to ignore generated IDL & types:
+# target/idl/
+# target/types/
+
+# Trident fuzz corpus & crashes
+trident-tests/trident-logs/
+trident-tests/src/*/
+corpus/
+crashes/
+
+
+# ---------------------------------------------------------------------------
+# Node.js / TypeScript (all workspaces: sdk, cli, tui, backend, app)
+# ---------------------------------------------------------------------------
+node_modules/
+dist/
+build/
+out/
+.turbo/
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Package manager lock files — keep ONE (this repo uses yarn)
+package-lock.json
+pnpm-lock.yaml
+# yarn.lock  ← keep tracked
+
+# Packed tarballs (cli publishing)
+*.tgz
+
+# Test coverage
+coverage/
+.nyc_output/
+
+
+# ---------------------------------------------------------------------------
+# Next.js (app/)
+# ---------------------------------------------------------------------------
+.next/
+.vercel/
+next-env.d.ts
+
+
+# ---------------------------------------------------------------------------
+# Prisma (backend/)
+# ---------------------------------------------------------------------------
+# Migration SQL is intentional — keep it tracked.
+# Uncomment to ignore the generated client:
+# backend/node_modules/.prisma/
+
+# Local SQLite dev databases
+*.db
+*.sqlite
+*.sqlite3
+
+
+# ---------------------------------------------------------------------------
+# Docker
+# ---------------------------------------------------------------------------
+docker-compose.override.yml
+
+
+# ---------------------------------------------------------------------------
+# Logs
+# ---------------------------------------------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pino-*.log
+
+
+# ---------------------------------------------------------------------------
+# OS / Editor
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*.orig
+
+
+# ---------------------------------------------------------------------------
+# Misc tooling
+# ---------------------------------------------------------------------------
+.eslintcache
+.prettierignore.cache

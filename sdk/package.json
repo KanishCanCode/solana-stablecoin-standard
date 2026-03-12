@@ -1,0 +1,31 @@
+{
+  "name": "@sss/sdk",
+  "version": "0.1.0",
+  "description": "Solana Stablecoin Standard TypeScript SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build":   "tsc -p tsconfig.json",
+    "test":    "ts-mocha -p tsconfig.json -t 30000 tests/**/*.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": ["solana", "stablecoin", "token-2022", "anchor"],
+  "license": "MIT",
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
+    "@solana/spl-token": "^0.4.9",
+    "@solana/web3.js":   "^1.98.0",
+    "bn.js":             "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/bn.js":     "^5.1.6",
+    "@types/chai":      "^4.3.14",
+    "@types/mocha":     "^10.0.6",
+    "@types/node":      "^20.12.7",
+    "chai":             "^4.4.1",
+    "mocha":            "^10.4.0",
+    "ts-mocha":         "^10.0.0",
+    "typescript":       "^5.4.5"
+  }
+}

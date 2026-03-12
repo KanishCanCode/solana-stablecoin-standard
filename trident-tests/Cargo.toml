@@ -1,0 +1,21 @@
+[package]
+name    = "sss-fuzz"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "fuzz_issue_retire"
+path = "src/bin/fuzz_issue_retire.rs"
+
+[[bin]]
+name = "fuzz_cosign_gate"
+path = "src/bin/fuzz_cosign_gate.rs"
+
+[dependencies]
+trident-client = "0.7.0"
+anchor-lang    = { version = "0.32.1", features = ["init-if-needed"] }
+sss-core       = { path = "../programs/sss-core" }
+sss-events     = { path = "../modules/sss-events" }
+arbitrary      = { version = "1", features = ["derive"] }
+
+[workspace]
